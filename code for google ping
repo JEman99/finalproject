@@ -1,0 +1,185 @@
+require 'json'
+
+iparray = []
+avg = 0
+puts "What operating system are you using? Press 1 for mac and linux, and press 2 for windows."
+os = gets.to_i
+if os == 1 then
+  ipsold = `traceroute -w 2 -m 4 google.com`
+  ipsnew = ipsold.split("\n")
+  ipsnew = ipsnew.to_s
+  1.times do ipsnew
+    data_point_values = ipsnew.to_s.split(" ")
+    data_value = data_point_values[2]
+    iparray.push data_value
+    data_value2 = data_point_values[12]
+    iparray.push data_value2
+    data_value3 = data_point_values[22]
+    iparray.push data_value3
+  end
+  # f = File.new('./ipsarrayfile', 'w')
+  # f.write JSON.generate(iparray)
+  # f.close
+
+end
+
+if os == 2 then
+  ipsold = `traceroute -w 2 -m 4 google.com`
+  ipsnew = ipsold.split("\n")
+  ipsnew = ipsnew.to_s
+  1.times do ipsnew
+  data_point_values = ipsnew.to_s.split(" ")
+  data_value = data_point_values[2]
+  iparray.push data_value
+  data_value2 = data_point_values[12]
+  iparray.push data_value2
+  data_value3 = data_point_values[22]
+  iparray.push data_value3
+  end
+
+end
+def pingwebsite
+  sum = 0
+  arrayping = Array.new
+  ping = 0
+
+  puts "How many times do you want to ping?"
+  ptimes = gets.to_i
+  f = File.new("./ptimes", "w")
+  f.write ptimes
+  f.close
+
+  ptimes.times do
+    `ping -c1 google.com` =~ %r[= \d+\.\d+/(\d+\.\d+)]
+    ping = $1 and $1.to_f
+    arrayping.push ping.to_f
+  end
+  #takes sample of n pings to average from a common website
+  arrayping.each do |arrayping|
+    sum = arrayping + sum
+  end
+  avg = sum/ptimes
+  f = File.new("./pingtimes", "w")
+  f.write avg
+  f.close
+  puts "Your average ping time is #{avg.round(3)} milliseconds"
+end
+def pingother(iparray)
+  sum = 0
+
+  ping = 0
+  f = File.new("./ptimes", "r")
+  ptimes = f.read.to_i
+  f.close
+  # iparray= Array.new
+  # f = File.new('./ipsarrayfile', 'r')
+  # iparray.push(JSON.parse(f.read))
+  # f.close
+  puts iparray.inspect
+  apip = iparray[0]
+  apping = Array.new
+  ptimes.times do
+    `ping -c1 #{apip}` =~ %r[= \d+\.\d+/(\d+\.\d+)]
+    ping = $1 and $1.to_f
+    apping.push ping.to_f
+  end
+  #takes sample of n pings to average from a common website
+  apping.each do |apping|
+    sum = apping + sum
+  end
+  avgap = sum/ptimes
+  f = File.new('./ipsarrayfile', 'r')
+  iparray.push f.read
+  f.close
+  routip = iparray[1]
+  routip = routip.chomp
+  routping = Array.new
+  ptimes.times do
+    `ping -c1 #{routip}` =~ %r[= \d+\.\d+/(\d+\.\d+)]
+    ping = $1 and $1.to_f
+    routping.push ping.to_f
+  end
+  #takes sample of n pings to average from a common website
+  routping.each do |routping|
+    sum = routping + sum
+  end
+  avgrout = sum/ptimes
+  f = File.new('./ipsarrayfile', 'r')
+  iparray.push f.read
+  f.close
+  modip = iparray[2]
+  modip = modip.chomp
+  if modip == '*' then
+    avgmod = sum/ptimes
+
+    allping = Array.new
+    allping.push avgap.to_f
+    allping.push avgrout.to_f
+    allping.push avgmod.to_f
+
+    f = File.new("./pingtimes", "r")
+    websiteping = f.read
+    f.close
+    aptoroutping = avgrout.to_f - avgap.to_f
+    puts avgrout
+
+
+
+
+
+
+    finalreport = "Your latency gained by your wireless access point is #{avgap}.\n Your latency gained by your router is #{aptoroutping}.\n These numbers are all ping time's and can be used to assess your networks bottlenecks."
+    f = File.new("./Report", "w")
+    f.write finalreport
+    f.close
+    puts finalreport
+  else
+  modping = Array.new
+  ptimes.times do
+    `ping -c1 #{modip}` =~ %r[= \d+\.\d+/(\d+\.\d+)]
+    ping = $1 and $1.to_f
+    modping.push ping.to_f
+  end
+  #takes sample of n pings to average from a common website
+  modping.each do |modping|
+    sum = modping + sum
+  end
+  avgmod = sum/ptimes
+
+  allping = Array.new
+  allping.push avgap.to_f
+  allping.push avgrout.to_f
+  allping.push avgmod.to_f
+
+  f = File.new("./pingtimes", "r")
+  websiteping = f.read
+  f.close
+  ispping = websiteping.to_f - avgmod.to_f
+  aptoroutping = avgrout.to_f - avgap.to_f
+  routtomodemping = avgmod.to_f - avgrout.to_f
+
+
+
+
+
+
+  finalreport = "Your latnecy gained by your isp is #{ispping}.\n Your latency gained by your wireless access point is #{avgap}.\n Your latency gained by your router is #{aptoroutping}.\n Your latency gained by your modem is #{routtomodemping}.\n Your total latency is #{websiteping}.\n These numbers are all ping time's and can be used to assess your networks bottlenecks."
+  f = File.new("./Report", "w")
+  f.write finalreport
+  f.close
+  puts finalreport
+  end
+end
+pingwebsite
+pingother(iparray)
+
+
+
+
+
+
+
+
+
+
+
